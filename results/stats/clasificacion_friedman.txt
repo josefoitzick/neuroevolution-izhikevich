@@ -1,0 +1,2 @@
+Friedman chi2=12.646720 p=8.119832e-02 alpha=0.05 n_escenarios=12
+no significativo

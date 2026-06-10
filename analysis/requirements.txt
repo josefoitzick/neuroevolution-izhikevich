@@ -1,0 +1,6 @@
+# Dependencias del analisis estadistico (analysis/stats.py).
+# Versiones con las que se generaron los resultados en results/stats/.
+pandas==2.2.3
+scipy==1.16.3
+scikit-posthocs==0.14.0
+matplotlib==3.10.0

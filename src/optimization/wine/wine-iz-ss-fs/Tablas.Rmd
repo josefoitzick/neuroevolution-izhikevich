@@ -1,0 +1,163 @@
+---
+title: "Búsqueda Hiperparametros Optuna Modelo Izhikevich en experimento de clasificación Wine con codificación por spike única (ss) y decodificación por spikes rápidos (fs)"
+output: html_document
+---
+
+```{r, echo=FALSE}
+suppressMessages(library("plotly"))
+suppressMessages(library("dplyr"))
+suppressMessages(library("DT"))
+suppressMessages(library("DescTools"))
+suppressMessages(library("tidyverse"))
+```
+
+
+```{r, echo=FALSE}
+datos = read.csv("all_studies.csv")
+```
+
+Parametros usados por neurona:
+```{r, echo=FALSE}
+data_vals <- tribble(
+  ~a,     ~b,    ~c,    ~d,    ~modelo,
+  0.02,   0.20, -65,   6,   "tonic spiking",
+  0.02,   0.25, -65,   6,   "phasic spiking",
+  0.02,   0.20, -50,   2,   "tonic bursting",
+  0.02,   0.25, -55, 0.05,  "phasic bursting",
+  0.02,   0.20, -55,   4,   "mixed mode",
+  0.01,   0.20, -65,   8,   "spike frequency adaptation",
+  0.02,  -0.10, -55,   6,   "Class 1",
+  0.20,   0.26, -65,   0,   "Class 2"
+)
+
+data_vals <- data_vals %>%
+  mutate(tipo_neurona = LETTERS[1:n()]) %>%
+  select(tipo_neurona, a, b, c, d, modelo)
+
+# Mostrar tabla
+print(data_vals)
+
+datatable(data_vals, options = list(pageLength = 10, autoWidth = TRUE))
+
+```
+
+Mejores resultados de cada neurona en 50 trials de optuna por cada neurona.
+
+```{r, echo=FALSE}
+# Filtrar trials completos
+df_ok <- datos %>% filter(state == "COMPLETE")
+
+# Seleccionar mejor por neurona (minimizar valor)
+best_by_neuron <- df_ok %>%
+  group_by(study_name) %>%
+  slice_max(order_by = value, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+# --- Formato ancho ---
+# 1) Mantener solo columnas relevantes
+best_long <- best_by_neuron %>%
+  select(study_name, value, starts_with("params_"))
+
+# 2) Quitar el prefijo "params_" para mayor claridad
+best_wide <- best_long %>%
+  rename_with(~ gsub("^params_", "", .x), starts_with("params_"))
+
+# Ahora cada fila es un tipo de neurona y cada parámetro es una columna
+print(best_wide)
+
+# --- Mostrar tabla interactiva con DT ---
+datatable(best_wide, options = list(pageLength = 10, scrollX = TRUE))
+```
+
+Grafico de los parametros de las neuronas (Basado en graficos generados por optuna-dashboard)
+
+```{r, echo=FALSE}
+
+# === Config ===
+csv_in    <- "all_studies.csv"
+direction <- "maximize"  # o "minimize"
+
+# === Leer CSV ===
+datos <- read_csv(csv_in, show_col_types = FALSE)
+
+# detectar columna de objetivo (value, value_0, etc.)
+value_col  <- grep("^value", names(datos), value = TRUE)[1]
+param_cols <- grep("^params_", names(datos), value = TRUE)
+
+# === Hover text seguro (sin errores) ===
+datos <- datos %>%
+  mutate(
+    hover_text = pmap_chr(across(all_of(param_cols)), function(...) {
+      params <- list(...)
+      param_text <- paste0(
+        paste(
+          paste0("• ", sub("^params_", "", names(params)), " = ",
+                 signif(unlist(params), 6)),
+          collapse = "<br>"
+        )
+      )
+      param_text
+    })
+  ) %>%
+  mutate(
+    hover_text = paste0(
+      "<b>", study_name, "</b>",
+      "<br>Trial: ", number,
+      "<br><b>", value_col, ":</b> ", signif(.data[[value_col]], 6),
+      "<br><b>Parámetros:</b><br>", hover_text
+    )
+  )
+
+# === Calcular mejor valor acumulado ===
+datos_step <- datos %>%
+  arrange(study_name, number) %>%
+  group_by(study_name) %>%
+  mutate(
+    running_best = if (direction == "maximize")
+      cummax(.data[[value_col]]) else cummin(.data[[value_col]])
+  ) %>%
+  ungroup()
+
+# === Plot ===
+fig <- plot_ly()
+
+# puntos
+fig <- fig %>%
+  add_markers(
+    data = datos,
+    x = ~number, y = ~.data[[value_col]],
+    split = ~study_name, colors = "Set1",
+    text = ~hover_text, hoverinfo = "text",
+    name = ~paste("Objective 0 of", study_name),
+    legendgroup = ~study_name,
+    marker = list(size = 7, opacity = 0.85),
+    selected = list(marker = list(size = 10, opacity = 1)),
+    unselected = list(marker = list(opacity = 0.3))
+  )
+
+# líneas rectas de best value
+fig <- fig %>%
+  add_lines(
+    data   = datos_step,
+    x = ~number, y = ~running_best,
+    split  = ~study_name, colors = "Set1",
+    name   = ~paste("Best Value of", study_name),
+    legendgroup = ~study_name,
+    line = list(shape = "linear", width = 3),
+    hoverinfo = "skip"
+  ) %>%
+  layout(
+    title = "Trials por estudio (puntos) + Mejor valor acumulado (línea)",
+    xaxis = list(title = "Trial"),
+    yaxis = list(title = value_col),
+    hovermode = "closest",
+    legend = list(groupclick = "togglegroup")
+  )
+
+fig
+```
+
+
+
+
+

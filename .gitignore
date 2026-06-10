@@ -1,0 +1,51 @@
+# ==== Compilados C++ / NEAT ====
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+bin/
+# Ejecutable NEAT (sin extensión, generado por make).
+# Rutas específicas para NO ignorar la carpeta de código RL src/NEAT/
+/src/Classification/NEAT
+/src/NEAT/NEAT
+
+# ==== ANNarchy (código y builds generados en runtime) ====
+annarchy/
+**/annarchy/
+annarchy-*/
+
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ==== Logs de jobs / cluster ====
+*.out
+*.err
+*.log
+slurm-*.out
+
+# ==== Resultados intermedios pesados ====
+Resultados/
+Resultados_Corridas/
+Resultados_RL/
+Resultados-Pruebas/
+*.zip
+
+# ==== R (sesión / render) ====
+.Rhistory
+.RData
+*.html
+
+# ==== Editores / SO ====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
