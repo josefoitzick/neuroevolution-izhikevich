@@ -84,7 +84,7 @@ def analizar_clasificacion():
     # --- Diagrama de diferencias criticas (CD) ---
     plt.figure(figsize=(9, 2.5))
     sp.critical_difference_diagram(ranks, nemenyi)
-    plt.title("Diferencias criticas — Clasificacion (Nemenyi, alpha=0.05)")
+    plt.title("Critical difference diagram (classification)")
     plt.tight_layout()
     cd_path = os.path.join(OUTDIR, "cd_diagram_clasificacion.png")
     plt.savefig(cd_path, dpi=150, bbox_inches="tight")
@@ -113,14 +113,29 @@ def analizar_rl():
         grupos = [sub[sub["model"] == m]["fitness"].values for m in models]
 
         stat, p = ss.kruskal(*grupos)
+        n_total = sum(len(g) for g in grupos)
+        eps2 = stat / (n_total - 1)            # epsilon-cuadrado (tamano de efecto, 0-1)
         sig = "significativo" if p < ALPHA else "no significativo"
-        print(f"\n[{problem}]  Kruskal-Wallis: H = {stat:.4f}  p = {p:.6f}  -> {sig}")
-        resumen.append({"problema": problem, "H": stat, "p_value": p, "resultado": sig})
+        print(f"\n[{problem}]  Kruskal-Wallis: H = {stat:.4f}  p = {p:.6f}  "
+              f"eps2 = {eps2:.3f}  -> {sig}")
+        resumen.append({"problema": problem, "H": stat, "p_value": p,
+                        "epsilon2": eps2, "resultado": sig})
 
         # Dunn post-hoc (correccion Holm) — siempre se guarda como referencia
         dunn = sp.posthoc_dunn(sub, val_col="fitness", group_col="model", p_adjust="holm")
         dunn = dunn.reindex(index=models, columns=models)
         dunn.to_csv(os.path.join(OUTDIR, f"rl_{problem}_dunn.csv"))
+
+        # Tamano de efecto pareado: correlacion rank-biserial  r = 2U/(n1 n2) - 1
+        # (r > 0 indica que el modelo de la fila supera al de la columna)
+        rb = pd.DataFrame(index=models, columns=models, dtype=float)
+        for a in models:
+            xa = sub[sub["model"] == a]["fitness"].values
+            for b in models:
+                xb = sub[sub["model"] == b]["fitness"].values
+                U = ss.mannwhitneyu(xa, xb, alternative="two-sided").statistic
+                rb.loc[a, b] = 2.0 * U / (len(xa) * len(xb)) - 1.0
+        rb.to_csv(os.path.join(OUTDIR, f"rl_{problem}_rankbiserial.csv"))
 
         # Mejor modelo por mediana (mayor = mejor)
         med = sub.groupby("model")["fitness"].median().sort_values(ascending=False)
