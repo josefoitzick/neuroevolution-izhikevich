@@ -28,6 +28,19 @@ import pandas as pd
 import scipy.stats as ss
 import scikit_posthocs as sp
 
+# Fuentes grandes + serif Times para la figura (diagrama CD), consistente con
+# las demas figuras del paper (plot_*_boxplots.py). Feedback del profesor.
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+    "font.size": 16,
+    "axes.titlesize": 18,
+    "axes.labelsize": 17,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+})
+
 ALPHA = 0.05
 
 HERE     = os.path.dirname(os.path.abspath(__file__))
@@ -82,12 +95,12 @@ def analizar_clasificacion():
     nemenyi.to_csv(os.path.join(OUTDIR, "clasificacion_nemenyi.csv"))
 
     # --- Diagrama de diferencias criticas (CD) ---
-    plt.figure(figsize=(9, 2.5))
+    plt.figure(figsize=(11, 3.2))
     sp.critical_difference_diagram(ranks, nemenyi)
     plt.title("Critical difference diagram (classification)")
     plt.tight_layout()
     cd_path = os.path.join(OUTDIR, "cd_diagram_clasificacion.png")
-    plt.savefig(cd_path, dpi=150, bbox_inches="tight")
+    plt.savefig(cd_path, dpi=200, bbox_inches="tight")
     plt.close()
     print(f"\nDiagrama CD -> {os.path.relpath(cd_path, HERE)}")
 
