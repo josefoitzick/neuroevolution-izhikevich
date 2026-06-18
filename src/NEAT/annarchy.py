@@ -452,7 +452,7 @@ def acrobot(pop, Monitor, input_index, output_index, inputWeights):
     env = gym.make("Acrobot-v1")
     observation, info = env.reset(seed=42)
     max_steps = 500
-    episodes = 20
+    episodes = 100
     maxInput = inputWeights[1]
     minInput = inputWeights[0]
     inputWeights_rand = np.random.uniform(minInput, maxInput, 6)
@@ -500,7 +500,7 @@ def mountaincar(pop, Monitor, input_index, output_index, inputWeights):
     observation, info = env.reset()
     terminated = False
     truncated = False
-    episodes = 10
+    episodes = 100
     h = 0
     final_fitness = 0
 
