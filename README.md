@@ -1,6 +1,6 @@
 # neuroevolution-izhikevich
 
-Reference code and results for a Master's thesis (USACH) on **neuroevolution of spiking
+Reference code and results for a research project (USACH) on **neuroevolution of spiking
 neural networks** with diverse **Izhikevich** neuron models, built on a NEAT engine and
 [ANNarchy](https://annarchy.github.io/) (`<5`).
 
