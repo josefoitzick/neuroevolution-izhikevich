@@ -79,6 +79,24 @@ The main comparison is **between the eight Izhikevich neuron types** (LIF exclud
 
 Run with `python analysis/stats.py` (dependencies in `analysis/requirements.txt`).
 
+### Network complexity
+
+`analysis/complejidad.py` summarises the **topology of the winning networks** (nodes and
+connections per model), to discuss whether some neuron types reach comparable performance
+with smaller networks.
+
+- **Data:** `results/metrics/runs_complexity_classification.csv` and
+  `runs_complexity_rl.csv` hold, per winning genome (one per run), its node count, connection
+  count and hidden-node count. `analysis/consolidar_complejidad.py` documents how these were
+  built from the raw `best0.txt` genomes and `config.cfg` files.
+- **Output:** `results/stats/complejidad_resumen.csv` (mean ± sd of nodes and connections per
+  model, split into classification and RL).
+- In classification the node count is dominated by the fixed inputs (they vary per
+  dataset/encoder), so the evolved-complexity signal lives mainly in the connections and the
+  hidden nodes.
+
+Run with `python analysis/complejidad.py`.
+
 ## Notes
 
 - The C++ core compiles with `make` (per-track `Makefile`); the `NEAT` binary and ANNarchy
