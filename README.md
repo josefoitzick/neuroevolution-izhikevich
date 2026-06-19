@@ -89,8 +89,10 @@ with smaller networks.
   `runs_complexity_rl.csv` hold, per winning genome (one per run), its node count, connection
   count and hidden-node count. `analysis/consolidar_complejidad.py` documents how these were
   built from the raw `best0.txt` genomes and `config.cfg` files.
-- **Output:** `results/stats/complejidad_resumen.csv` (mean ± sd of nodes and connections per
-  model, split into classification and RL).
+- **Outputs:** `results/stats/complejidad_resumen.csv` (mean ± sd of nodes and connections per
+  model, split into classification and RL) and `results/stats/complejidad_tests.csv` (tests of
+  whether network size differs between neuron types: Friedman over the 12 scenarios for
+  classification, Kruskal–Wallis per problem for RL, mirroring `stats.py`).
 - In classification the node count is dominated by the fixed inputs (they vary per
   dataset/encoder), so the evolved-complexity signal lives mainly in the connections and the
   hidden nodes.
