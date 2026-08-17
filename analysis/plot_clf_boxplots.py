@@ -49,7 +49,17 @@ COMBO_TITLES = {("ss", "fs"): "ss--fs", ("ss", "v"): "ss--v",
 
 df = pd.read_csv(os.path.join(METRICS, "runs_classification.csv"))
 
-fig, axes = plt.subplots(len(DATASETS), len(COMBOS), figsize=(13, 8), sharey=True)
+fig, axes = plt.subplots(len(DATASETS), len(COMBOS), figsize=(13, 8), sharey="row")
+
+# Escala por fila: cada dataset ocupa su propio rango en vez de 0-1, para que las
+# distribuciones sean legibles. Se comparte dentro de la fila para que los cuatro
+# combos encoder-decoder de un mismo dataset sigan siendo comparables entre si.
+ylims = {}
+for ds in DATASETS:
+    v = df[df.dataset == ds]["fitness"]
+    lo, hi = v.min(), v.max()
+    pad = 0.06 * (hi - lo)
+    ylims[ds] = (lo - pad, hi + pad)
 
 for i, ds in enumerate(DATASETS):
     for j, (enc, dec) in enumerate(COMBOS):
@@ -65,7 +75,7 @@ for i, ds in enumerate(DATASETS):
             patch.set_facecolor("#9bc3f0")
             patch.set_alpha(0.6)
         ax.set_xticks(range(1, len(MODELS) + 1))
-        ax.set_ylim(0, 1)
+        ax.set_ylim(*ylims[ds])
         ax.grid(axis="y", alpha=0.3)
         if i == 0:
             ax.set_title(COMBO_TITLES[(enc, dec)])

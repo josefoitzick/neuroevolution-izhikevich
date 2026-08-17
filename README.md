@@ -79,6 +79,21 @@ The main comparison is **between the eight Izhikevich neuron types** (LIF exclud
 
 Run with `python analysis/stats.py` (dependencies in `analysis/requirements.txt`).
 
+### Factorial analysis (classification)
+
+`analysis/factorial.py` complements `stats.py`. The Friedman test summarises each of the 12
+scenarios by a median, which discards the variation across its 11 runs; this script instead
+analyses the full balanced design (8 neuron types × 3 datasets × 4 encoder–decoder
+combinations × 11 runs = 1056 observations, 11 per cell).
+
+- A three-way factorial ANOVA on rank-aligned data, reporting partial `η²` so the effect of
+  the neuron type can be weighed against those of the dataset and the encoder–decoder pair.
+- A permutation test of the neuron-type effect restricted **within** each scenario, which
+  respects the nested structure and assumes nothing about the distribution.
+- **Output:** `results/stats/clasificacion_factorial.csv`.
+
+Run with `python analysis/factorial.py`.
+
 ### Network complexity
 
 `analysis/complejidad.py` summarises the **topology of the winning networks** (nodes and
@@ -96,6 +111,12 @@ with smaller networks.
 - In classification the node count is dominated by the fixed inputs (they vary per
   dataset/encoder), so the evolved-complexity signal lives mainly in the connections and the
   hidden nodes.
+- **Concatenated genomes.** Some `best0.txt` files hold two genomes rather than one: where a
+  worker evaluated two models reusing the same working directory, the second genome was
+  appended to the first instead of replacing it. Since a genome never repeats an
+  `origin;destination` pair, `consolidar_complejidad.py` detects the first repeated pair and
+  keeps the trailing block, which is the genome belonging to that directory's model. Without
+  this correction the affected runs count their connections twice.
 
 Run with `python analysis/complejidad.py`.
 

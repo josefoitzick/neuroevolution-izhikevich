@@ -37,26 +37,45 @@ OUT  = os.path.normpath(os.path.join(HERE, "..", "results", "metrics"))
 _RUN_RE = re.compile(r"corrida-(\d+)$")
 
 
-def genome_complexity(best_path):
-    """nodos distintos y numero de conexiones a partir de un best0.txt."""
-    nodes = set()
-    connections = 0
+def _edges(best_path):
+    """Aristas (origen, destino) de un best0.txt, en orden de aparicion."""
+    out = []
     with open(best_path) as f:
         for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            parts = line.split(";")
+            parts = line.strip().split(";")
             if len(parts) < 2:
                 continue
             try:
-                src, dst = int(parts[0]), int(parts[1])
+                out.append((int(parts[0]), int(parts[1])))
             except ValueError:
                 continue
-            nodes.add(src)
-            nodes.add(dst)
-            connections += 1
-    return nodes, connections
+    return out
+
+
+def genome_complexity(best_path):
+    """Nodos distintos y numero de conexiones del genoma campeon de una corrida.
+
+    Algunos best0.txt contienen DOS genomas concatenados: cuando un worker
+    evaluo dos modelos reutilizando el mismo directorio de trabajo, el genoma del
+    segundo se anexo al del primero en vez de reemplazarlo. Un genoma nunca
+    repite un par (origen, destino), asi que la primera repeticion marca el
+    comienzo del segundo bloque; ese segundo bloque es el que corresponde al
+    modelo del directorio. Sin esta correccion las conexiones de esas corridas se
+    cuentan por duplicado (~2x) y el modelo aparece con redes mucho mas densas de
+    lo que realmente evoluciono.
+    """
+    edges = _edges(best_path)
+    seen = set()
+    cut = None
+    for i, e in enumerate(edges):
+        if e in seen:
+            cut = i
+            break
+        seen.add(e)
+    if cut is not None:
+        edges = edges[cut:]
+    nodes = {n for e in edges for n in e}
+    return nodes, len(edges)
 
 
 def read_io(cfg_path):
@@ -141,21 +160,28 @@ def main():
             "al arbol de salidas crudas de los experimentos."
         )
 
-    cl = build_classification(SOURCE)
-    with open(os.path.join(OUT, "runs_complexity_classification.csv"), "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["dataset", "encoder", "decoder", "model", "run",
-                    "nodes", "connections", "hidden"])
-        w.writerows(cl)
+    # TRACKS permite regenerar una sola familia. Es necesario porque los dos
+    # arboles crudos no siempre conviven en la misma maquina: las corridas
+    # finales de RL (100 episodios) y las de clasificacion se recolectaron por
+    # separado, y reconstruir una desde un arbol desactualizado la corromperia.
+    tracks = os.environ.get("TRACKS", "classification,rl").split(",")
 
-    rl = build_rl(SOURCE)
-    with open(os.path.join(OUT, "runs_complexity_rl.csv"), "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["problem", "model", "run", "nodes", "connections", "hidden"])
-        w.writerows(rl)
+    if "classification" in tracks:
+        cl = build_classification(SOURCE)
+        with open(os.path.join(OUT, "runs_complexity_classification.csv"), "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["dataset", "encoder", "decoder", "model", "run",
+                        "nodes", "connections", "hidden"])
+            w.writerows(cl)
+        print(f"Clasificacion: {len(cl)} genomas ({len(cl)//11} combos)")
 
-    print(f"Clasificacion: {len(cl)} genomas ({len(cl)//11} combos)")
-    print(f"RL: {len(rl)} genomas ({len(rl)//11} combos)")
+    if "rl" in tracks:
+        rl = build_rl(SOURCE)
+        with open(os.path.join(OUT, "runs_complexity_rl.csv"), "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["problem", "model", "run", "nodes", "connections", "hidden"])
+            w.writerows(rl)
+        print(f"RL: {len(rl)} genomas ({len(rl)//11} combos)")
 
 
 if __name__ == "__main__":
